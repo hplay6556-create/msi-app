@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MSI App Player</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+:root {
+  --bg: #1e293b;
+  --bg-dark: #1a202c;
+  --card: #2a3342;
+  --accent: #ffc107;
+  --accent-red: #f44336;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --btn-primary: linear-gradient(90deg, #ff9800, #ffc107);
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-dark);
+  color: var(--text);
+}
+
+/* ===== โครงสร้างหลัก ===== */
+.msi-app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  position: relative;
+}
+
+/* ปุ่มปิดมุมบนซ้าย */
+.close-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 100;
+}
+.close-btn:hover { color: #fff; }
+
+/* ===== แถบด้านซ้าย ===== */
+.sidebar {
+  width: 48px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 24px;
+  border-right: 1px solid var(--border);
+}
+.side-icon {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.side-icon:hover, .side-icon.active {
+  background: rgba(255, 193, 7, 0.1);
+  color: var(--accent);
+}
+
+/* ===== เนื้อหาหลัก ===== */
+.main-area {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* ===== หน้าแรก ===== */
+.page { display: none; width: 100%; height: 100%; }
+.page.active { display: block; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+
+/* ป้าย Surprise Offer */
+.surprise-vertical {
+  position: absolute;
+  left: 64px;
+  top: 120px;
+  width: 48px;
+  height: 180px;
+  background: linear-gradient(180deg, #ff6f00, #ffc107);
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+.surprise-text {
+  writing-mode: vertical-rl;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1px;
+}
+.surprise-coin { font-size: 22px; }
+
+/* ช่องค้นหา */
+.search-bar {
+  position: absolute;
+  left: 128px;
+  top: 120px;
+  width: 200px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 10px;
+}
+.search-icon { color: var(--text-muted); }
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+.search-input::placeholder { color: var(--text-muted); }
+.search-icon-play { color: #4caf50; font-size: 16px; }
+
+/* ปุ่มเมนูหลัก */
+.menu-grid {
+  position: absolute;
+  left: 140px;
+  top: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.menu-item:hover { transform: translateX(8px); }
+.menu-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+}
+.console-icon {
+  background: linear-gradient(135deg, #7b1fa2, #e91e63);
+  box-shadow: 0 0 12px rgba(156, 39, 176, 0.3);
+}
+.system-icon {
+  background: var(--card);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  padding: 6px;
+}
+.system-icon div {
+  background: var(--border);
+  border-radius: 4px;
+}
+.store-icon {
+  background: linear-gradient(135deg, #1976d2, #00bcd4);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  padding: 6px;
+}
+.store-icon div {
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+}
+.menu-label {
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* คอลัมน์เกมขวา */
+.games-col {
+  position: absolute;
+  right: 24px;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.games-header {
+  writing-mode: vertical-rl;
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin: 0 auto 16px;
+}
+.game-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.game-item:hover { transform: scale(1.08); }
+.game-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  overflow: hidden;
+}
+.game-icon img { width: 100%; height: 100%; object-fit: cover; }
+.game-name {
+  font-size: 11px;
+  color: var(--text);
+  text-align: right;
+  line-height: 1.4;
+}
+
+/* ข้อความล่างซ้าย */
+.footer-brand {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ===== หน้าตั้งค่า ===== */
+.settings-page { padding: 0; }
+.settings-layout {
+  display: flex;
+  min-height: 100%;
+}
+
+/* แถบเมนูด้านซ้ายในตั้งค่า */
+.settings-tabs {
+  width: 140px;
+  padding: 24px 12px;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.setting-tab {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  margin-bottom: 2px;
+  border-left: 2px solid transparent;
+}
+.setting-tab:hover { color: var(--text); }
+.setting-tab.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+}
+
+/* เนื้อหาตั้งค่า */
+.settings-content {
+  flex: 1;
+  padding: 24px;
+  position: relative;
+}
+.setting-section {
+  display: none;
+  animation: fadeIn 0.2s ease;
+}
+.setting-section.active { display: block; }
+
+/* หัวข้อ */
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* แถวตั้งค่า */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+.setting-label {
+  font-size: 12px;
+  color: var(--text);
+  flex: 1;
+}
+.setting-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ตัวเลือก dropdown & radio */
+.select-control {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  outline: none;
+  min-width: 120px;
+}
+.select-control:focus { border-color: var(--accent); }
+.radio-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.radio-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  position: relative;
+}
+.radio-dot.active {
+  border-color: var(--accent);
+}
+.radio-dot.active::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* ปุ่มเปิด-ปิด */
+.toggle {
+  width: 40px;
+  height: 20px;
+  background: var(--border);
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+.toggle.on { background: var(--accent-red); }
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle.on::after { transform: translateX(20px); }
+
+/* ปุ่มบันทึกขวาบน */
+.save-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.save-btn:hover {
+  background: rgba(255, 193, 7, 0.1);
+}
+.save-note {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  font-size: 10px;
+  color: var(--text-muted);
+  max-width: 160px;
+  text-align: right;
+}
+
+/* สไลด์เดอร์ */
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.slider {
+  -webkit-appearance: none;
+  width: 120px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-red);
+  cursor: pointer;
+  border: 2px solid #fff;
+}
+
+/* ปรับหน้าจอแนวตั้ง */
+@media (max-width: 600px) {
+  .menu-grid { position: relative; left: 0; top: 280px; padding: 0 24px; }
+  .games-col { position: relative; right: 0; top: 20px; flex-direction: row; flex-wrap: wrap; justify-content: center; }
+  .games-header { writing-mode: horizontal-tb; margin: 0 0 12px; }
+  .search-bar { position: relative; left: 0; top: 20px; margin: 0 auto; }
+  .surprise-vertical { display: none; }
+  .settings-layout { flex-direction: column; }
+  .settings-tabs { width: 100%; display: flex; overflow-x: auto; padding-bottom: 8px; }
+  .setting-tab { white-space: nowrap; border-left: none; border-bottom: 2px solid transparent; }
+  .setting-tab.active { border-left: none; border-bottom-color: var(--accent); }
+}
+</style>
+</head>
+<body>
+
+<div class="msi-app">
+  <!-- ปุ่มปิด -->
+  <button class="close-btn" id="close-main">×</button>
+
+  <!-- แถบซ้าย -->
+  <div class="sidebar">
+    <button class="side-icon active" data-goto="home">🏠</button>
+    <button class="side-icon" data-goto="settings">⚙️</button>
+  </div>
+
+  <!-- ===== หน้าแรก ===== -->
+  <div class="page active" id="page-home">
+    <!-- ป้าย Surprise Offer -->
+    <div class="surprise-vertical">
+      <span class="surprise-text">Surprise Offer</span>
+      <span class="surprise-coin">💰</span>
+    </div>
+
+    <!-- ช่องค้นหา -->
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" placeholder="Search for games & apps">
+      <span class="search-icon-play">▶️</span>
+    </div>
+
+    <!-- เมนูหลัก -->
+    <div class="menu-grid">
+      <div class="menu-item" data-action="console">
+        <div class="menu-icon console-icon">🎮</div>
+        <span class="menu-label">Console mode</span>
+      </div>
+
+      <div class="menu-item" data-action="system">
+        <div class="menu-icon system-icon"><div></div><div></div><div></div><div></div></div>
+        <span class="menu-label">System apps</span>
+      </div>
+
+      <div class="menu-item" data-action="store">
+        <div class="menu-icon store-icon"><div></div><div></div><div></div><div></div></div>
+        <span class="menu-label">Store</span>
+      </div>
+    </div>
+
+    <!-- คอลัมน์เกมขวา -->
+    <div class="games-col">
+      <span class="games-header">POPULAR GAMES TO PLAY</span>
+      
+      <div class="game-item" data-game="line">
+        <div class="game-icon">🐻</div>
+        <div class="game-name">LINE<br>12TH ANNIVERSARY</div>
+      </div>
+      
+      <div class="game-item" data-game="seven">
+        <div class="game-icon">⚔️</div>
+        <div class="game-name">Seven Knights<br>Re:BIRTH</div>
+      </div>
+      
+      <div class="game-item" data-game="kof">
+        <div class="game-icon">👊</div>
+        <div class="game-name">คิงโกะเนส<br>สตรีทไฟท์เตอร์</div>
+      </div>
+      
+      <div class="game-item" data-game="opm">
+        <div class="game-icon">🦸</div>
+        <div class="game-name">ONE PUNCH MAN:<br>The Strongest</div>
+      </div>
+      
+      <div class="game-item" data-game="gangstar">
+        <div class="game-icon">🤖</div>
+        <div class="game-name">Gangstar Mirage<br>City: Online</div>
+      </div>
+      
+      <div class="game-item" data-game="yulgang">
+        <div class="game-icon">⚔️</div>
+        <div class="game-name">Yulgang W.: โลกใหม่<br>ทั้งใหม่</div>
+      </div>
+    </div>
+
+    <div class="footer-brand">MSI App Player</div>
+  </div>
+
+  <!-- ===== หน้าตั้งค่า ===== -->
+  <div class="page settings-page" id="page-settings">
+    <div class="settings-layout">
+      <!-- เมนูย่อยซ้าย -->
+      <div class="settings-tabs">
+        <button class="setting-tab active" data-setting="performance">Performance</button>
+        <button class="setting-tab" data-setting="display">Display</button>
+        <button class="setting-tab" data-setting="graphics">Graphics</button>
+        <button class="setting-tab" data-setting="devices">Devices</button>
+        <button class="setting-tab" data-setting="game">Game settings</button>
+        <button class="setting-tab" data-setting="advanced">Advanced</button>
+        <button class="setting-tab" data-setting="shortcut">Shortcuts</button>
+        <button class="setting-tab" data-setting="user">User data</button>
+        <button class="setting-tab" data-setting="about">About</button>
+      </div>
+
+      <!-- เนื้อหาตั้งค่า -->
+      <div class="settings-content">
+        <button class="save-btn">Save changes</button>
+        <p class="save-note">Changes will apply after restart</p>
+
+        <!-- Performance -->
+        <div class="setting-section active" id="set-performance">
+          <h4 class="section-title">CPU Allocation</h4>
+          <div class="setting-row">
+            <div class="setting-label">
+              CPU Cores
+              <div class="setting-desc">Recommended: 4 cores</div>
+            </div>
+            <select class="select-control">
+              <option>1 Core</option>
+              <option>2 Cores</option>
+              <option selected>4 Cores</option>
+              <option>8 Cores</option>
+            </select>
+          </div>
+
+          <h4 class="section-title">Memory Allocation</h4>
+          <div class="setting-row">
+            <div class="setting-label">
+              Memory size (MB)
+              <div class="setting-desc">Recommended: 4096 MB</div>
+            </div>
+            <select class="select-control">
+              <option>2048 MB</option>
+              <option selected>4096 MB</option>
+              <option>8192 MB</option>
+            </select>
+          </div>
+
+          <h4 class="section-title">Performance Mode</h4>
+          <div class="setting-row">
+            <div class="setting-label">
+              Frame Rate
+              <div class="setting-desc">Higher FPS provides smoother experience</div>
+            </div>
+            <div class="slider-container">
+              <span style="font-size:11px;color:var(--text-muted);">60</span>
+              <input type="range" class="slider" min="30" max="120" value="60">
+              <span style="font-size:11px;color:var(--text-muted);">120</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              Frame Rate Resolution
+              <div class="setting-desc">Higher resolution provides clearer image</div>
+            </div>
+            <select class="select-control">
+              <option>720P</option>
+              <option selected>1080P</option>
+              <option>2K</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Display -->
+        <div class="setting-section" id="set-display">
+          <h4 class="section-title">Display Resolution</h4>
+          <div class="setting-row">
+            <div class="radio-row">
+              <label class="radio-option">
+                <span class="radio-dot"></span>
+                960 × 540
+              </label>
+              <label class="radio-option">
+                <span class="radio-dot"></span>
+                1280 × 720
+              </label>
+              <label class="radio-option">
+                <span class="radio-dot active"></span>
+                1920 × 1080
+              </label>
+              <label class="radio-option">
+                <span class="radio-dot"></span>
+                2560 × 1440
+              </label>
+            </div>
+          </div>
+          
+          <div class="setting-row">
+            <div class="setting-label">
+              Landscape
+              <div class="setting-desc">Recommended: 1920 × 1080</div>
+            </div>
+            <select class="select-control">
+              <option>960 × 540</option>
+              <option>1280 × 720</option>
+              <option selected>1920 × 1080</option>
+              <option>2560 × 1440</option>
+            </select>
+          </div>
+
+          <h4 class="section-title">DPI Settings</h4>
+          <div class="setting-row">
+            <div class="setting-label">
+              DPI
+              <div class="setting-desc">Recommended: 240 (Medium)</div>
+            </div>
+            <select class="select-control">
+              <option>160 (Low)</option>
+              <option selected>240 (Medium)</option>
+              <option>320 (High)</option>
+              <option>480 (Very High)</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-label">Mouse cursor style</div>
+            <select class="select-control">
+              <option>Default</option>
+              <option selected>Nox Player</option>
+              <option>System default</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Graphics -->
+        <div class="setting-section" id="set-graphics">
+          <h4 class="section-title">Graphics Renderer</h4>
+          <div class="setting-row">
+            <div class="radio-row">
+              <label class="radio-option">
+                <span class="radio-dot"></span>
+                OpenGL
+              </label>
+              <label class="radio-option">
+                <span class="radio-dot active"></span>
+                DirectX
+              </label>
+            </div>
+          </div>
+          
+          <div class="setting-row">
+            <div class="setting-label">
+              Interface Renderer
+              <div class="setting-desc">Auto select best renderer</div>
+            </div>
+            <select class="select-control">
+              <option>Auto</option>
+              <option selected>DirectX</option>
+              <option>OpenGL</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-label">ASTC Textures (Beta)</div>
+            <select class="select-control">
+              <option>Disabled</option>
+              <option selected>Enabled</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-label">
+              Software decoding
+              <div class="setting-desc">Use software decoding for video</div>
+            </div>
+            <button class="toggle on"></button>
+          </div>
+        </div>
+
+        <!-- Devices -->
+        <div class="setting-section" id="set-devices">
+          <h4 class="section-title">Gamepad Settings</h4>
+          <div class="setting-row">
+            <div class="setting-label">
+              Gamepad support
+              <div class="setting-desc">Enable gamepad input</div>
+            </div>
+            <button class="toggle on"></button>
+          </div>
+          
+          <div class="setting-row">
+            <div class="setting-label">
+              Analog dead zone
+              <div class="setting-desc">Adjust sensitivity</div>
+            </div>
+            <select class="select-control">
+              <option>Small</option>
+              <option selected>Medium</option>
+              <option>Large</option>
+            </select>
+          </div>
+          
+          <div class="setting-row">
+            <div class="setting-label">Enable gamepad vibration</div>
+            <button class="toggle on"></button>
+          </div>
+        </div>
+
+        <!-- Game Settings -->
+        <div class="setting-section" id="set-game">
+          <h4 class="section-title">Launch Preference</h4>
+          <div class="setting-row">
+            <div class="setting-label">
+              Choose app you want to launch by default
+              <div class="setting-desc">Select which app opens on startup</div>
+            </div>
+            <select class="select-control">
+              <option selected>No app launched</option>
+              <option>Free Fire</option>
+              <option>Store</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Advanced -->
+        <div class="setting-section" id="set-advanced">
+          <h4 class="section-title">Debug & Developer Options</h4>
+          <div class="setting-row">
+            <div class="setting-label">
+              Wireless Debugging / Shizuku
+              <div class="setting-desc">Enable advanced system control</div>
+            </div>
+            <button class="toggle" id="toggle-shizuku"></button>
+          </div>
+          
+          <div class="setting-row">
+            <div class="setting-label">
+              Allow ADB Connection
+              <div class="setting-desc">Connect from computer via wireless</div>
+            </div>
+            <button class="toggle" id="toggle-adb"></button>
+          </div>
+          
+          <div class="setting-row">
+            <div class="setting-label">
+              App Pairing
+              <div class="setting-desc">Select apps to map controls</div>
+            </div>
+            <button class="save-btn" style="position:static;">Configure</button>
+          </div>
+        </div>
+
+        <!-- Shortcuts -->
+        <div class="setting-section" id="set-shortcut">
+          <h4 class="section-title">Keyboard Shortcuts</h4>
+          <div class="setting-row">
+            <div class="setting-label">
+              Show/Hide keymapping
+              <div class="setting-desc">Ctrl + K</div>
+            </div>
+            <button class="toggle on"></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              Freeze cursor
+              <div class="setting-desc">Right Click</div>
+            </div>
+            <button class="toggle on"></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              WASD Movement
+              <div class="setting-desc">Enabled</div>
+            </div>
+            <button class="toggle on"></button>
+          </div>
+        </div>
+
+        <!-- User Data -->
+        <div class="setting-section" id="set-user">
+          <h4 class="section-title">Data Management</h4>
+          <div class="setting-row">
+            <div class="setting-label">
+              Clear cache
+              <div class="setting-desc">Free up storage space</div>
+            </div>
+            <button class="save-btn" style="position:static;">Clear</button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              Backup data
+              <div class="setting-desc">Save settings & game progress</div>
+            </div>
+            <button class="save-btn" style="position:static;">Backup</button>
+          </div>
+        </div>
+
+        <!-- About -->
+        <div class="setting-section" id="set-about">
+          <h4 class="section-title">About MSI App Player</h4>
+          <div class="setting-row">
+            <div class="setting-label">
+              Version
+              <div class="setting-desc">v5.2.0 (Mobile Edition)</div>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              Built for
+              <div class="setting-desc">Android 11+ • ARM64 • Mouse & Keyboard Ready</div>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              Made by
+              <div class="setting-desc">htmltoapk</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// === 전체 페이지 전환 ===
+const pages = document.querySelectorAll('.page');
+const sideIcons = document.querySelectorAll('.side-icon');
+
+sideIcons.forEach(icon => {
+  icon.addEventListener('click', () => {
+    const target = icon.dataset.goto;
+    sideIcons.forEach(i => i.classList.remove('active'));
+    icon.classList.add('active');
+    pages.forEach(p => p.classList.remove('active'));
+    document.getElementById(`page-${target}`).classList.add('active');
+  });
+});
+
+// === 설정 탭 전환 ===
+const settingTabs = document.querySelectorAll('.setting-tab');
+const settingSections = document.querySelectorAll('.setting-section');
+
+settingTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    settingTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    settingSections.forEach(s => s.classList.remove('active'));
+    document.getElementById(`set-${tab.dataset.setting}`).classList.add('active');
+  });
+});
+
+// === 토글 버튼 ===
+document.querySelectorAll('.toggle').forEach(toggle => {
+  toggle.addEventListener('click', () => {
+    toggle.classList.toggle('on');
+  });
+});
+
+// === 라디오 버튼 ===
+document.querySelectorAll('.radio-dot').forEach(dot => {
+  dot.parentElement.addEventListener('click', () => {
+    dot.parentElement.parentElement.querySelectorAll('.radio-dot').forEach(d => d.classList.remove('active'));
+    dot.classList.add('active');
+  });
+});
+
+// === 메인 메뉴 클릭 ===
+document.querySelectorAll('.menu-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const name = item.querySelector('.menu-label').textContent;
+    alert(`✅ ${name}\n\n페이지로 이동합니다...`);
+  });
+});
+
+// === 게임 클릭 ===
+document.querySelectorAll('.game-item').forEach(game => {
+  game.addEventListener('click', () => {
+    const name = game.querySelector('.game-name').textContent;
+    alert(`🎮 ${name}\n\n게임을 시작합니다!\n\n✅ 마우스-키보드 모드 활성화됨`);
+  });
+});
+
+// === 저장 버튼 ===
+document.querySelectorAll('.save-btn').forEach(btn => {
+  if (btn.textContent === 'Save changes') {
+    btn.addEventListener('click', () => {
+      alert('✅ 설정이 저장되었습니다!\n\n변경사항을 적용하려면 재시작이 필요할 수 있습니다.');
+    });
+  }
+});
+
+// === 닫기 ===
+document.getElementById('close-main').addEventListener('click', () => {
+  if (confirm('MSI App Player를 종료하시겠습니까?')) {
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#1a202c;color:#94a3b8;flex-direction:column;gap:12px;"><div style="font-size:32px;">✅</div><div>종료되었습니다</div><div style="font-size:11px;color:#475569;">새로고침하여 다시 시작</div></div>';
+  }
+});
+</script>
+</body>
+</html>
